@@ -10,7 +10,7 @@ void GameModel::startGame(GameType type)
     gameType=type;
     //初始化棋盘
     gameMapVec.clear();
-    for(int i=0;j<BOARD_GRAD_SIZE;i++)
+    for(int i=0;i<BOARD_GRAD_SIZE;i++)
     {
         std::vector<int> lineBoard;
         for(int j=0;j<BOARD_GRAD_SIZE;++j)
@@ -47,7 +47,7 @@ void GameModel::calculateScore()
 
 void GameModel::actionByPerson(int row, int col)
 {
-
+    updateGameMap(row,col);
 }
 
 void GameModel::actionByAI(int &clickRow, int &clickCol)
@@ -57,7 +57,13 @@ void GameModel::actionByAI(int &clickRow, int &clickCol)
 
 void GameModel::updateGameMap(int row, int col)
 {
+    if(playerFlag)//如果是黑棋,将点坐标设为1
+        gameMapVec[row][col]=1;
+    else//如果是白棋,将点坐标设为-1
+        gameMapVec[row][col]=-1;
 
+    //换手
+    playerFlag=!playerFlag;
 }
 
 bool GameModel::isWin(int row, int col)

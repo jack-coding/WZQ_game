@@ -25,7 +25,9 @@ private:
     bool selectPos=false;//是否移动到合适的位置,已选中某个交叉点
     void initGame();
     void initAIGame();
+    void chessOneByPerson();
     void mouseMoveEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
     //绘制
     void paintEvent(QPaintEvent *event);
 };
