@@ -22,7 +22,7 @@ enum GameStatus
 const int BOARD_GRAD_SIZE=15;//棋盘尺寸
 const int MARGIN=30;//棋盘边缘空隙
 const int CHESS_RADIUS=15;//棋子半径
-const int MARK_SIZE=5;//落子标记边长
+const int MARK_SIZE=4;//落子标记边长
 const int BLOCK_SIZE=40;//格子的大小
 const int POS_OFFSET=BLOCK_SIZE*0.4;//鼠标点击的模糊距离
 const int AI_THINK_TIME=700;//AI下棋的思考时间

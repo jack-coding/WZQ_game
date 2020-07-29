@@ -2,7 +2,9 @@
 #include "ui_mainwindow.h"
 #include <math.h>
 #include <QMouseEvent>
-#include<QBrush>
+#include <QBrush>
+#include <QMessageBox>
+#include<QDebug>
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -152,7 +154,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
         //从左到右,第i+1条竖线
         painter.drawLine(MARGIN+BLOCK_SIZE*i,MARGIN,
                          MARGIN+BLOCK_SIZE*i,MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE);
-        //从上到下,第i+i条横线
+        //从上到下,第i+1条横线
         painter.drawLine(MARGIN,MARGIN+BLOCK_SIZE*i,
                          MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE,MARGIN+BLOCK_SIZE*i);
     }
@@ -175,5 +177,47 @@ void MainWindow::paintEvent(QPaintEvent *event)
         }
         painter.setBrush(brush);
         painter.drawEllipse(MARGIN+BLOCK_SIZE*clickPosCol-MARK_SIZE,MARGIN+BLOCK_SIZE*clickPosRow-MARK_SIZE,MARK_SIZE*2,MARK_SIZE*2);
+    }
+
+    //绘制棋子
+    for(int i=0;i<BOARD_GRAD_SIZE;++i){
+        for(int j=0;j<BOARD_GRAD_SIZE;++j){
+            if(game->gameMapVec[i][j]==1){
+                brush.setColor(Qt::black);
+                painter.setBrush(brush);
+                painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
+            }
+            else if(game->gameMapVec[i][j]==-1){
+                brush.setColor(Qt::white);
+                painter.setBrush(brush);
+                painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
+            }
+        }
+    }
+
+    //判断输赢
+    if(clickPosCol>0&&clickPosCol<BOARD_GRAD_SIZE&&
+       clickPosRow>0&&clickPosRow<BOARD_GRAD_SIZE&&
+       (game->gameMapVec[clickPosRow][clickPosCol]==1||
+             game->gameMapVec[clickPosRow][clickPosCol]==-1))
+    {
+        if(game->isWin(clickPosRow,clickPosCol)
+                &&game->gameStatus==PALYING)
+        {
+            qDebug()<<game->isWin(clickPosRow,clickPosCol);
+            game->gameStatus=WIN;
+            QString str;
+            if(game->gameMapVec[clickPosRow][clickPosCol]==1)
+                str="黑棋";
+            else if(game->gameMapVec[clickPosRow][clickPosCol]==-1)
+                str="白棋";
+             QMessageBox::StandardButton btnValue=QMessageBox::information(this,"五子棋决战",str+"胜利!");
+
+             if(btnValue==QMessageBox::Ok)
+             {
+                 game->startGame(game_type);
+                 game->gameStatus=PALYING;
+             }
+        }
     }
 }
