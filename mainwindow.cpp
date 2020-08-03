@@ -1,13 +1,19 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "choosedialog.h"
+
 #include <math.h>
 #include <QMouseEvent>
 #include <QBrush>
 #include <QMessageBox>
-#include<QDebug>
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+#include <QDebug>
+#include <QTimer>
+#include <qrandom.h>
+#include <QtGlobal>
+#include <QTime>
+#include <QSound>
+
+MainWindow::MainWindow(GameType mode,QWidget *parent) :QMainWindow(parent),ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
@@ -15,19 +21,23 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setFixedSize(MARGIN*2+BLOCK_SIZE*BOARD_GRAD_SIZE,
                        MARGIN*2+BLOCK_SIZE*BOARD_GRAD_SIZE);
     this->setMouseTracking(true);
-    initGame();
+    this->setWindowTitle("五子棋");
+    initGame(mode);
 }
+
+
 
 MainWindow::~MainWindow()
 {
+    if(game){
+         delete game;
+    }
     delete ui;
 }
 
 void MainWindow::initAIGame()
 {
-    game_type=AI;
     game->gameStatus=PALYING;
-
     //在数据模型中进行初始化功能
     game->startGame(game_type);
     update();
@@ -42,7 +52,7 @@ void MainWindow::chessOneByPerson()
         //在游戏的数据模型中落子
         game->actionByPerson(clickPosRow,clickPosCol);
         //播放落子音效
-
+        QSound::play(":sound/chessone.wav");
         //重绘
         update();
     }
@@ -116,11 +126,9 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
                 selectPos=true;
             }
         }
-
-        //再将屏幕刷新
-        update();//调用paintEvent函数对界面进行重新绘制
     }
-
+    //再将屏幕刷新
+     update();//调用paintEvent函数对界面进行重新绘制
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event)
@@ -129,16 +137,17 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
         return;
     //在落子之前,把落子标记在设置为false;
     selectPos=false;
-
     chessOneByPerson();
-
     if(game_type==AI){//人机对战模式
+        this->setMouseTracking(false);
         //AI下棋
+    QTimer::singleShot(AI_THINK_TIME,this,SLOT(chessOneByAI()));
     }
 }
 
-void MainWindow::initGame()
+void MainWindow::initGame(GameType gametype)
 {
+    this->game_type=gametype;
     game=new GameModel;
     initAIGame();
 }
@@ -147,77 +156,102 @@ void MainWindow::initGame()
 
 void MainWindow::paintEvent(QPaintEvent *event)
 {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing,true);//抗锯齿效果
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing,true);//抗锯齿效果
 
-    for(int i=0;i<BOARD_GRAD_SIZE+1;++i){//横线与竖线的数量均为格子数加一
-        //从左到右,第i+1条竖线
-        painter.drawLine(MARGIN+BLOCK_SIZE*i,MARGIN,
-                         MARGIN+BLOCK_SIZE*i,MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE);
-        //从上到下,第i+1条横线
-        painter.drawLine(MARGIN,MARGIN+BLOCK_SIZE*i,
-                         MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE,MARGIN+BLOCK_SIZE*i);
-    }
-
-    //绘制选中点
-    QBrush brush;
-    brush.setStyle(Qt::SolidPattern);
-    //绘制落子标记(防止鼠标出框越界)
-    if(clickPosRow>0&&clickPosRow<BOARD_GRAD_SIZE
-       &&clickPosCol>0&&clickPosCol<BOARD_GRAD_SIZE
-       &&game->gameMapVec[clickPosRow][clickPosCol]==0)
-    {
-        if(game->playerFlag)
-        {
-            brush.setColor(Qt::black);
+        for(int i=0;i<BOARD_GRAD_SIZE+1;++i){//横线与竖线的数量均为格子数加一
+            //从左到右,第i+1条竖线
+            painter.drawLine(MARGIN+BLOCK_SIZE*i,MARGIN,
+                             MARGIN+BLOCK_SIZE*i,MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE);
+            //从上到下,第i+1条横线
+            painter.drawLine(MARGIN,MARGIN+BLOCK_SIZE*i,
+                             MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE,MARGIN+BLOCK_SIZE*i);
         }
-        else
-        {
-            brush.setColor(Qt::white);
-        }
-        painter.setBrush(brush);
-        painter.drawEllipse(MARGIN+BLOCK_SIZE*clickPosCol-MARK_SIZE,MARGIN+BLOCK_SIZE*clickPosRow-MARK_SIZE,MARK_SIZE*2,MARK_SIZE*2);
-    }
 
-    //绘制棋子
-    for(int i=0;i<BOARD_GRAD_SIZE;++i){
-        for(int j=0;j<BOARD_GRAD_SIZE;++j){
-            if(game->gameMapVec[i][j]==1){
+        //绘制选中点
+        QBrush brush;
+        brush.setStyle(Qt::SolidPattern);
+        //绘制落子标记(防止鼠标出框越界)
+        if(clickPosRow>0&&clickPosRow<BOARD_GRAD_SIZE
+           &&clickPosCol>0&&clickPosCol<BOARD_GRAD_SIZE
+           &&game->gameMapVec[clickPosRow][clickPosCol]==0)
+        {
+            if(game->playerFlag)
+            {
                 brush.setColor(Qt::black);
-                painter.setBrush(brush);
-                painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
             }
-            else if(game->gameMapVec[i][j]==-1){
+            else
+            {
                 brush.setColor(Qt::white);
-                painter.setBrush(brush);
-                painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
+            }
+            painter.setBrush(brush);
+            painter.drawEllipse(MARGIN+BLOCK_SIZE*clickPosCol-MARK_SIZE,MARGIN+BLOCK_SIZE*clickPosRow-MARK_SIZE,MARK_SIZE*2,MARK_SIZE*2);
+        }
+
+
+        //绘制棋子
+        for(int i=0;i<BOARD_GRAD_SIZE;++i){
+            for(int j=0;j<BOARD_GRAD_SIZE;++j){
+                if(game->gameMapVec[i][j]==1){
+                    brush.setColor(Qt::black);
+                    painter.setBrush(brush);
+                    painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
+                }
+                else if(game->gameMapVec[i][j]==-1){
+                    brush.setColor(Qt::white);
+                    painter.setBrush(brush);
+                    painter.drawEllipse(MARGIN+BLOCK_SIZE*j-CHESS_RADIUS,MARGIN+BLOCK_SIZE*i-CHESS_RADIUS,CHESS_RADIUS*2,CHESS_RADIUS*2);
+                }
             }
         }
-    }
 
-    //判断输赢
-    if(clickPosCol>0&&clickPosCol<BOARD_GRAD_SIZE&&
-       clickPosRow>0&&clickPosRow<BOARD_GRAD_SIZE&&
-       (game->gameMapVec[clickPosRow][clickPosCol]==1||
-             game->gameMapVec[clickPosRow][clickPosCol]==-1))
-    {
-        if(game->isWin(clickPosRow,clickPosCol)
-                &&game->gameStatus==PALYING)
+        //判断输赢
+        if(clickPosCol>0&&clickPosCol<BOARD_GRAD_SIZE&&
+           clickPosRow>0&&clickPosRow<BOARD_GRAD_SIZE&&
+           (game->gameMapVec[clickPosRow][clickPosCol]==1||
+                 game->gameMapVec[clickPosRow][clickPosCol]==-1))
         {
-            qDebug()<<game->isWin(clickPosRow,clickPosCol);
-            game->gameStatus=WIN;
             QString str;
-            if(game->gameMapVec[clickPosRow][clickPosCol]==1)
-                str="黑棋";
-            else if(game->gameMapVec[clickPosRow][clickPosCol]==-1)
-                str="白棋";
-             QMessageBox::StandardButton btnValue=QMessageBox::information(this,"五子棋决战",str+"胜利!");
+            if(game->isWin(clickPosRow,clickPosCol)//是否有赢家
+                    &&game->gameStatus==PALYING)
+            {
+                game->gameStatus=WIN;
+                if(game->gameMapVec[clickPosRow][clickPosCol]==1)
+                    str="黑棋";
+                else if(game->gameMapVec[clickPosRow][clickPosCol]==-1)
+                    str="白棋";
+                QSound::play(":sound/win.wav");
+                QMessageBox::StandardButton btnValue=QMessageBox::information(NULL, "五子棋决战", str+"胜利!是否重新来一局?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                if(btnValue==QMessageBox::Yes)
+                {
+                     game->startGame(game_type);
+                     game->gameStatus=PALYING;
+                }
+                else{
+                     emit mainWindowClose();
+                     this->close();
+                }
+            }
+            if(game->isDeadGame()){//是否平局
+                QMessageBox::StandardButton btnValue=QMessageBox::information(NULL, "五子棋决战", "平局!是否重新来一局?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+                if(btnValue==QMessageBox::Yes)
+                {
+                     game->startGame(game_type);
+                     game->gameStatus=PALYING;
+                }
+                else{
+                     emit mainWindowClose();
+                     this->close();
+                }
+            }
 
-             if(btnValue==QMessageBox::Ok)
-             {
-                 game->startGame(game_type);
-                 game->gameStatus=PALYING;
-             }
         }
-    }
+}
+
+void MainWindow::chessOneByAI()
+{
+    game->actionByAI(clickPosRow,clickPosCol);
+    QSound::play(":sound/chessone.wav");
+    update();
+    this->setMouseTracking(true);
 }

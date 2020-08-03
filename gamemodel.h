@@ -25,7 +25,7 @@ const int CHESS_RADIUS=15;//棋子半径
 const int MARK_SIZE=4;//落子标记边长
 const int BLOCK_SIZE=40;//格子的大小
 const int POS_OFFSET=BLOCK_SIZE*0.4;//鼠标点击的模糊距离
-const int AI_THINK_TIME=700;//AI下棋的思考时间
+const int AI_THINK_TIME=800;//AI下棋的思考时间
 
 class GameModel
 {
