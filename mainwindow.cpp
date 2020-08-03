@@ -8,7 +8,6 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QTimer>
-#include <qrandom.h>
 #include <QtGlobal>
 #include <QTime>
 #include <QSound>
@@ -232,7 +231,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
                      this->close();
                 }
             }
-            if(game->isDeadGame()){//是否平局
+            else if(game->isDeadGame()){//是否平局
                 QMessageBox::StandardButton btnValue=QMessageBox::information(NULL, "五子棋决战", "平局!是否重新来一局?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
                 if(btnValue==QMessageBox::Yes)
                 {
