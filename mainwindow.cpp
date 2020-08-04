@@ -137,7 +137,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
     //在落子之前,把落子标记在设置为false;
     selectPos=false;
     chessOneByPerson();
-    if(game_type==AI){//人机对战模式
+    if(game_type==AI&&!game->isWin(clickPosRow,clickPosCol)){//人机对战模式
         this->setMouseTracking(false);
         //AI下棋
     QTimer::singleShot(AI_THINK_TIME,this,SLOT(chessOneByAI()));
@@ -166,7 +166,6 @@ void MainWindow::paintEvent(QPaintEvent *event)
             painter.drawLine(MARGIN,MARGIN+BLOCK_SIZE*i,
                              MARGIN+BLOCK_SIZE*BOARD_GRAD_SIZE,MARGIN+BLOCK_SIZE*i);
         }
-
         //绘制选中点
         QBrush brush;
         brush.setStyle(Qt::SolidPattern);
